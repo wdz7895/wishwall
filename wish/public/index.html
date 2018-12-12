@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+			#wishWall{
+				width: 1000px;
+				margin: 50px auto;
+				height: 600px;
+				border: 1px pink solid;
+				display: flex;
+				position: relative;
+			}
+			.box{
+				width: 150px;
+				height: 100px;
+				border: red 1px solid;
+				margin-right: 10px;
+				background: white;
+				position: absolute;
+			}
+			
+			.top,.bottom{
+				text-align: center;
+				height: 20px;
+			}
+			.middle{
+				width: 100%;
+				height: 58px;
+				text-align: center;
+				border: 1px black solid;
+			}
+		</style>
+	</head>
+	<body>
+		<input type="text" id="myWish" value="" placeholder="请输入你的心愿"/>
+		<button>提交</button>
+		<div id="wishWall">
+		</div>
+	</body>
+	<script type="text/html" id="page1">
+		<%for( var i = 0 ; i < data.length ; i++ ){%>
+			<div class="box">
+				<div class="top" onclick="del('<%=data[i]._id%>')">删除</div>
+				<div class="middle"><%=data[i].content%></br><%=data[i].time%></div>
+				<div class="bottom" onclick="right('<%=data[i]._id%>')">√</div>
+			</div>
+		<%}%>
+	</script>
+	<script src="js/ajax_v3.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/baiduTemplate.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/jquery-1.11.1.min.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript">
+		$("button").click(function(){
+			var obj = {};
+			obj.content = $("input").val()
+			obj.right = "no"
+			ajax.post("/wish/xieru",obj).then(res=>{
+				msg()
+			})
+		})
+		msg()
+		function msg (){
+			ajax.get("/wish/huoqu").then(res=>{
+				let data1 = JSON.parse(res)
+				//数组去重
+				var data =[]
+				$.each(data1, function(i,v) {
+					var flag = true;
+					if(data.length>0){
+						$.each(data,function(n,m){
+          					if(data[n].content == data1[i].content){
+          						flag = false;
+          					};
+     					});
+					}
+					if(flag){
+						data.push(data1[i]);
+					}
+				});
+				
+				console.log(data)
+				if(data.length>=8){
+					//随机选取八个
+					var newarr = []
+					while(newarr.length<8){
+						var m = Math.floor(Math.random()*(data.length))
+						if(newarr.indexOf(m)==-1){
+							newarr.push(m)
+						}
+					}
+					console.log(newarr)
+					var data2 = []
+					for (var i = 0; i < newarr.length; i++) {
+						newarr.index = i
+						var n = newarr[i]
+						data2.push(data[n])
+					}
+					console.log(data2)
+					data = data2
+				}else{
+					data = data
+				}
+				
+				
+				$("#wishWall").html(baidu.template("page1",{data}))
+				for (var i = 0; i < data.length; i++) {
+					if(data[i].right == "yes"){
+						$(".bottom").eq(i).css("background","red")
+					}
+					var t = Math.floor(Math.random()*500)
+					var l = Math.floor(Math.random()*850)
+				
+					var elt = $(".box").eq(i)
+					var position = elt.offset()
+					position.top += t
+					position.left += l
+					elt.offset(position)
+				}
+				
+			})
+			
+		}
+		//删除
+		function del(_id){
+			console.log(_id)
+			ajax.post("/wish/del",{_id}).then(res=>{
+				console.log(res)
+				msg()
+			})
+		}
+		//变色
+		function right(_id){
+			ajax.post("/wish/huoqu",{_id}).then(res=>{
+				console.log(res)
+				var arr = JSON.parse(res) 
+				var data = {}
+				data._id = arr._id
+				data.content = arr.content
+				console.log(data)
+				ajax.post("/wish/bs",data).then(res=>{
+					msg()
+					console.log(res)
+				})
+			})
+		}
+	</script>
+</html>
